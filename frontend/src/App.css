@@ -1,0 +1,28 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #f0f2f5; }
+.app { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100vh; }
+.header { background: #1F4E79; color: white; padding: 24px 16px; border-radius: 16px; text-align: center; margin-bottom: 24px; }
+.header h1 { font-size: 28px; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.8; }
+h2 { font-size: 18px; color: #333; margin-bottom: 16px; }
+.district-btn { display: block; width: 100%; padding: 16px; margin-bottom: 12px; background: white; border: 2px solid #1F4E79; border-radius: 12px; font-size: 16px; color: #1F4E79; font-weight: bold; cursor: pointer; }
+.district-btn:hover { background: #1F4E79; color: white; }
+.back-btn { background: none; border: none; color: #1F4E79; font-size: 16px; cursor: pointer; margin-bottom: 16px; }
+.categories { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cat-btn { padding: 16px 8px; background: white; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; cursor: pointer; }
+.cat-btn:hover { border-color: #1F4E79; }
+.offer-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; border: 2px solid #e0e0e0; }
+.offer-card:hover { border-color: #1F4E79; }
+.offer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.offer-title { font-weight: bold; font-size: 16px; }
+.discount-badge { background: #e74c3c; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+.discount-badge.big { font-size: 20px; padding: 6px 14px; }
+.offer-desc { color: #666; font-size: 14px; margin-bottom: 8px; }
+.offer-link { color: #1F4E79; font-size: 14px; }
+.empty { text-align: center; padding: 40px; color: #999; font-size: 16px; }
+.detail-card { background: white; border-radius: 16px; padding: 24px; }
+.detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.detail-desc { color: #555; font-size: 16px; margin-bottom: 24px; line-height: 1.5; }
+.contact-btn { width: 100%; padding: 16px; background: #1F4E79; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+.contact-box { background: #e8f5e9; border-radius: 12px; padding: 16px; text-align: center; }
+.phone { font-size: 20px; font-weight: bold; color: #1F4E79; margin-top: 8px; }
