@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:3001";
+const API = "https://sale-bot-production-7ac2.up.railway.app";
 
 export default function App() {
   const [offers, setOffers] = useState([]);
