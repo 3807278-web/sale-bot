@@ -1,30 +1,73 @@
 const express = require('express');
 const cors = require('cors');
-const app = express();
+const { Pool } = require('pg');
 
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-const offers = [
-  { id: 1, business: "Кафе Сонечко", title: "Знижка 20% на всі десерти", discount: "-20%", district: "Позняки", category: "Кафе та ресторани", phone: "+380991234567" },
-  { id: 2, business: "Піцерія Везувій", title: "Друга піца за 50%", discount: "-50%", district: "Позняки", category: "Кафе та ресторани", phone: "+380991234568" },
-  { id: 3, business: "Салон Краса", title: "Стрижка + укладка зі знижкою", discount: "-30%", district: "Позняки", category: "Салони краси", phone: "+380991234569" },
-  { id: 4, business: "Кав'ярня Ранок", title: "Кава + круасан = 99 грн", discount: "-25%", district: "Осокорки", category: "Кафе та ресторани", phone: "+380991234570" },
-  { id: 5, business: "FitLife", title: "Місячний абонемент зі знижкою", discount: "-40%", district: "Харківська", category: "Фітнес", phone: "+380991234571" },
-];
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-app.get('/offers', (req, res) => {
+// Створення таблиць
+pool.query(`
+  CREATE TABLE IF NOT EXISTS businesses (
+    id SERIAL PRIMARY KEY,
+    tg_id TEXT,
+    name TEXT NOT NULL,
+    district TEXT NOT NULL,
+    category TEXT NOT NULL,
+    contact_name TEXT,
+    contact_phone TEXT,
+    is_approved BOOLEAN DEFAULT false
+  );
+  CREATE TABLE IF NOT EXISTS offers (
+    id SERIAL PRIMARY KEY,
+    business_id INTEGER REFERENCES businesses(id),
+    title TEXT NOT NULL,
+    description TEXT,
+    discount TEXT,
+    valid_until DATE,
+    is_approved BOOLEAN DEFAULT false
+  );
+`).then(() => console.log('Таблиці створено'));
+
+app.get('/offers', async (req, res) => {
   const { district, category } = req.query;
-  let result = offers;
-  if (district) result = result.filter(o => o.district === district);
-  if (category) result = result.filter(o => o.category === category);
-  res.json(result);
+  let query = `SELECT o.*, b.name as business, b.district, b.category, b.contact_phone 
+               FROM offers o JOIN businesses b ON o.business_id = b.id 
+               WHERE o.is_approved = true AND b.is_approved = true`;
+  const params = [];
+  if (district) { params.push(district); query +=  AND b.district = $${params.length}; }
+  if (category) { params.push(category); query +=  AND b.category = $${params.length}; }
+  const result = await pool.query(query, params);
+  res.json(result.rows);
 });
 
-app.get('/offers/:id', (req, res) => {
-  const offer = offers.find(o => o.id === parseInt(req.params.id));
-  if (!offer) return res.status(404).json({ error: 'Not found' });
-  res.json(offer);
+app.get('/offers/:id', async (req, res) => {
+  const result = await pool.query('SELECT * FROM offers WHERE id = $1', [req.params.id]);
+  res.json(result.rows[0]);
 });
 
-app.listen(3001, () => console.log('Server running on port 3001'));
+app.post('/business/register', async (req, res) => {
+  const { tg_id, name, district, category, contact_name, contact_phone } = req.body;
+  const result = await pool.query(
+    'INSERT INTO businesses (tg_id, name, district, category, contact_name, contact_phone) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+    [tg_id, name, district, category, contact_name, contact_phone]
+  );
+  res.json(result.rows[0]);
+});
+
+app.post('/offers/create', async (req, res) => {
+  const { business_id, title, description, discount, valid_until } = req.body;
+  const result = await pool.query(
+    'INSERT INTO offers (business_id, title, description, discount, valid_until) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+    [business_id, title, description, discount, valid_until]
+  );
+  res.json(result.rows[0]);
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
