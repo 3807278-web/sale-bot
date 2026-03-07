@@ -1,28 +1,84 @@
-description && <div style={{ padding:12, background:"#f3f0ff", borderRadius:8, marginBottom:10 }}>{form.description}</div>}
-        </div>
-      ) : (
-        <textarea placeholder="Опишіть вашу акцію..." value={form.description} onChange={e => update("description", e.target.value)} style={{ width:"100%", padding:10, marginBottom:10, borderRadius:8, border:"1px solid #ddd", boxSizing:"border-box", minHeight:80 }} />
-      )}
+import { useState, useEffect } from "react";
 
-      <button onClick={submit} style={{ width:"100%", padding:14, borderRadius:8, border:"none", background:"#0088cc", color:"white", fontSize:16, cursor:"pointer" }}>
-        📤 Відправити на модерацію
-      </button>
-    </div>
+const API = "https://sale-bot-production-7ac2.up.railway.app";
+
+const CITIES = {
+  "🌆 Київ": ["Позняки","Осокорки","Харківська","Оболонь","Подол","Троєщина","Святошин","Борщагівка","Виноградар","Лівобережна"],
+  "🏙️ Бровари": ["Центр","Мікрорайон"],
+  "🏘️ Бориспіль": ["Центр"],
+  "🌇 Вишневе": ["Центр"],
+  "🏡 Ірпінь": ["Центр","Буча"],
+};
+
+const CATEGORIES = {
+  "🍔 Їжа та напої": ["Ресторани","Кафе","Піцерії","Суші / азіатська кухня","Бургери / фастфуд","Пекарні / кондитерські","Кав'ярні","Доставка їжі","Бари / паби","Кальянні"],
+  "💄 Краса та догляд": ["Салони краси","Барбершопи","Манікюр / педикюр","Косметологія","Масаж","Лазерна епіляція","SPA салони","Перманентний макіяж"],
+  "🏋️ Спорт та здоров'я": ["Фітнес клуби","Тренажерні зали","Йога студії","Танцювальні студії","Басейни","Спортивні секції"],
+  "🛍️ Магазини": ["Одяг","Взуття","Аксесуари","Косметика","Електроніка","Техніка","Парфуми","Подарунки","Квіти"],
+  "👶 Діти": ["Дитячі магазини","Дитячі кімнати","Розвиваючі центри","Дитячі гуртки","Дитячі свята"],
+  "🚗 Авто": ["СТО","Шиномонтаж","Автомийки","Детейлінг","Запчастини","Оренда авто"],
+  "🏠 Послуги": ["Ремонт техніки","Клінінг","Ремонт квартир","Хімчистки","Пральні","Доставка води"],
+  "🎓 Освіта": ["Курси мов","IT курси","Онлайн навчання","Репетитори","Автошколи"],
+  "🎮 Розваги": ["Кіно","Квести","Більярд","Боулинг","VR клуби","Антикафе","Ігрові клуби"],
+  "🏥 Медицина": ["Аптеки","Стоматології","Медичні центри","Аналізи","Оптика"],
+  "➕ Інше": ["Тату студії","Фотостудії","Туристичні агенції","Готелі / хостели","Коворкінги","Доставка квітів","Кейтеринг"]
+};
+
+function OffersPage() {
+  const [offers, setOffers] = useState([]);
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
+  const [category, setCategory] = useState("");
+
+  useEffect(() => {
+    fetch(`${API}/offers`)
+      .then(r => r.json())
+      .then(setOffers);
+  }, []);
+
+  const districts = city ? CITIES[city] : [];
+
+  const filtered = offers.filter(o =>
+    (district ? o.district === district : true) &&
+    (category ? o.category === category : true)
   );
-}
-
-export default function App() {
-  const [page, setPage] = useState("offers");
 
   return (
-    <div style={{ maxWidth:480, margin:"0 auto", fontFamily:"sans-serif", paddingBottom:70 }}>
-      <div style={{ padding:"16px 16px 0" }}>
-        {page === "offers" ? <OffersPage /> : <BusinessPage />}
-      </div>
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, display:"flex", borderTop:"1px solid #eee", background:"white", maxWidth:480, margin:"0 auto" }}>
-        <button onClick={() => setPage("offers")} style={{ flex:1, padding:14, border:"none", background:"none", color: page==="offers" ? "#0088cc" : "#888", fontWeight: page==="offers" ? "bold" : "normal", cursor:"pointer" }}>🏷️ Акції</button>
-        <button onClick={() => setPage("business")} style={{ flex:1, padding:14, border:"none", background:"none", color: page==="business" ? "#0088cc" : "#888", fontWeight: page==="business" ? "bold" : "normal", cursor:"pointer" }}>🏢 Для бізнесу</button>
-      </div>
+    <div>
+      <select onChange={e => { setCity(e.target.value); setDistrict(""); }} style={{ width:"100%", padding:10, marginBottom:10, borderRadius:8, border:"1px solid #ddd" }}>
+        <option value="">🌆 Обрати місто</option>
+        {Object.keys(CITIES).map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+
+      {city && (
+        <select onChange={e => setDistrict(e.target.value)} style={{ width:"100%", padding:10, marginBottom:10, borderRadius:8, border:"1px solid #ddd" }}>
+          <option value="">📍 Всі райони</option>
+          {districts.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+      )}
+
+      <select onChange={e => setCategory(e.target.value)} style={{ width:"100%", padding:10, marginBottom:16, borderRadius:8, border:"1px solid #ddd" }}>
+        <option value="">📂 Всі категорії</option>
+        {Object.entries(CATEGORIES).map(([group, cats]) => (
+          <optgroup key={group} label={group}>
+            {cats.map(c => <option key={c} value={c}>{c}</option>)}
+          </optgroup>
+        ))}
+      </select>
+
+      {filtered.length === 0 && <p style={{ textAlign:"center", color:"#888" }}>Акцій не знайдено</p>}
+
+      {filtered.map(o => (
+        <div key={o.id} style={{ border:"1px solid #eee", borderRadius:12, padding:16, marginBottom:12, boxShadow:"0 2px 6px rgba(0,0,0,0.07)" }}>
+          <h3 style={{ margin:"0 0 8px" }}>{o.title}</h3>
+          <p style={{ margin:"0 0 8px", color:"#555" }}>{o.description}</p>
+          <b style={{ color:"green", fontSize:18 }}>{o.discount}</b>
+          <p style={{ margin:"8px 0 0", color:"#888", fontSize:13 }}>📍 {o.district} • {o.category}</p>
+        </div>
+      ))}
     </div>
   );
 }
+
+function BusinessPage() {
+  const [form, setForm] = useState({ name:"", city:"", district:"", category:"", phone:"", title:"", description:"", discount:"", valid_until:"" });
