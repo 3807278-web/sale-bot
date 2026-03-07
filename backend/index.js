@@ -11,7 +11,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Створення таблиць
 pool.query(`
   CREATE TABLE IF NOT EXISTS businesses (
     id SERIAL PRIMARY KEY,
@@ -32,17 +31,10 @@ pool.query(`
     valid_until DATE,
     is_approved BOOLEAN DEFAULT false
   );
-`).then(() => console.log('Таблиці створено'));
+`).then(() => console.log('Таблиці створено')).catch(e => console.log('DB error:', e.message));
 
 app.get('/offers', async (req, res) => {
-  const { district, category } = req.query;
-  let query = `SELECT o.*, b.name as business, b.district, b.category, b.contact_phone 
-               FROM offers o JOIN businesses b ON o.business_id = b.id 
-               WHERE o.is_approved = true AND b.is_approved = true`;
-  const params = [];
-  if (district) { params.push(district); query +=  AND b.district = $${params.length}; }
-  if (category) { params.push(category); query +=  AND b.category = $${params.length}; }
-  const result = await pool.query(query, params);
+  const result = await pool.query('SELECT * FROM offers WHERE is_approved = true');
   res.json(result.rows);
 });
 
