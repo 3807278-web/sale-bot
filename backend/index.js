@@ -61,5 +61,8 @@ app.post('/offers/create', async (req, res) => {
   res.json(result.rows[0]);
 });
 
-const PORT = process.env.PORT || 3001;
+app.post('/offers/approve/:id', async (req, res) => {
+  const result = await pool.query('UPDATE offers SET is_approved = true WHERE id = $1 RETURNING *', [req.params.id]);
+  res.json(result.rows[0]);
+});const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
