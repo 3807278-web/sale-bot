@@ -52,7 +52,7 @@ function OffersPage() {
           {districts.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
       )}
-      <select onChange={e => setCategory(e.target.value)} style={{width:"100%",padding:10,marginBottom:16,borderRadius:8,border:"1px solid #ddd"}}>
+      <select onChange={e => setCategory(e.target.value)} style={{width:"100%",padding:14,marginBottom:12,borderRadius:10,border:"2px solid #0088cc",fontSize:16,height:52,color:"#333",background:"white"}}>
         <option value="">Всі категорії</option>
         {Object.entries(CATEGORIES).map(([group, cats]) => (
           <optgroup key={group} label={group}>
