@@ -163,8 +163,8 @@ export default function App() {
         {page === "offers" ? <OffersPage /> : <BusinessPage />}
       </div>
       <div style={{position:"fixed",bottom:0,left:0,right:0,display:"flex",borderTop:"1px solid #eee",background:"white"}}>
-        <button onClick={() => setPage("offers")} style={{flex:1,padding:14,border:"none",background:"none",color:page==="offers"?"#0088cc":"#888",fontWeight:page==="offers"?"bold":"normal",cursor:"pointer"}}>Акції</button>
-        <button onClick={() => setPage("business")} style={{flex:1,padding:14,border:"none",background:"none",color:page==="business"?"#0088cc":"#888",fontWeight:page==="business"?"bold":"normal",cursor:"pointer"}}>Для бізнесу</button>
+        <button onClick={() => setPage("offers")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="offers"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏷️ Акції</button>
+<button onClick={() => setPage("business")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="business"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏢 Бізнес</button>
       </div>
     </div>
   );
