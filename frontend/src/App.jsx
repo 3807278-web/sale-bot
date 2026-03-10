@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+const ADMIN_PASSWORD = "Yura9777";
 
 const API = "https://sale-bot-production-7ac2.up.railway.app";
 
@@ -154,18 +155,58 @@ function BusinessPage() {
     </div>
   );
 }
+function AdminPage() {
+  const [pending, setPending] = useState([]);
 
+  useEffect(() => {
+    fetch(API + "/offers/pending")
+      .then(r => r.json())
+      .then(setPending);
+  }, []);
+
+  return (
+    <div>
+      <h3 style={{textAlign:"center"}}>⚙️ Адмін панель</h3>
+      {pending.length === 0 && <p style={{textAlign:"center",color:"#888"}}>Немає акцій на модерації</p>}
+      {pending.map(o => (
+        <div key={o.id} style={{border:"1px solid #eee",borderRadius:12,padding:16,marginBottom:12}}>
+          <h3 style={{margin:"0 0 8px"}}>{o.title}</h3>
+          <p style={{color:"#555"}}>{o.description}</p>
+          <b style={{color:"green"}}>{o.discount}</b>
+          <div style={{display:"flex",gap:8,marginTop:12}}>
+            <button onClick={() => fetch(API+"/offers/approve/"+o.id,{method:"POST"}).then(()=>setPending(p=>p.filter(x=>x.id!==o.id)))} style={{flex:1,padding:10,borderRadius:8,border:"none",background:"green",color:"white",cursor:"pointer"}}>✅ Схвалити</button>
+            <button onClick={() => fetch(API+"/offers/reject/"+o.id,{method:"POST"}).then(()=>setPending(p=>p.filter(x=>x.id!==o.id)))} style={{flex:1,padding:10,borderRadius:8,border:"none",background:"red",color:"white",cursor:"pointer"}}>❌ Відхилити</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 export default function App() {
   const [page, setPage] = useState("offers");
+const [adminAuth, setAdminAuth] = useState(false);
+const [adminInput, setAdminInput] = useState("");
   return (
     <div style={{maxWidth:480,margin:"0 auto",fontFamily:"sans-serif",paddingBottom:70}}>
       <div style={{padding:"16px 16px 0"}}>
-        {page === "offers" ? <OffersPage /> : <BusinessPage />}
+        {page === "admin" && !adminAuth ? (
+  <div style={{textAlign:"center",padding:40}}>
+    <h2>🔐 Адмін панель</h2>
+    <input type="password" placeholder="Введіть пароль" value={adminInput} onChange={e => setAdminInput(e.target.value)} style={{width:"100%",padding:14,borderRadius:10,border:"2px solid #0088cc",fontSize:16,boxSizing:"border-box",marginBottom:12}} />
+    <button onClick={() => { if(adminInput === ADMIN_PASSWORD) setAdminAuth(true); else alert("Невірний пароль!"); }} style={{width:"100%",padding:14,borderRadius:10,border:"none",background:"#0088cc",color:"white",fontSize:16,cursor:"pointer"}}>Увійти</button>
+  </div>
+) : page === "admin" && adminAuth ? (
+  <AdminPage />
+) : page === "offers" ? (
+  <OffersPage />
+) : (
+  <BusinessPage />
+)}
       </div>
       <div style={{position:"fixed",bottom:0,left:0,right:0,display:"flex",borderTop:"1px solid #eee",background:"white"}}>
         <button onClick={() => setPage("offers")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="offers"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏷️ 🔍Знайти Акцію</button>
-<button onClick={() => setPage("business")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="business"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏢 +Зробити Акцію✅</button>
-      </div>
+<button onClick={() => setPage("business")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="business"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏢 +Дода Акцію✅</button>
+      <button onClick={() => setPage("admin")} style={{width:"48%",height:45,border:"none",borderRadius:10,background:page==="admin"?"#0088cc":"white",color:page==="admin"?"white":"#777",fontSize:14,fontWeight:"bold",cursor:"pointer"}}>⚙️ Адмін</button></div>
     </div>
   );
 }
