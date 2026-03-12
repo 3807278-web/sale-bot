@@ -323,7 +323,7 @@ fetch(API + "/offers")
 
 return(
 
-<div style={{width:"100%",margin:"0 auto",paddingBottom:80}}>
+<div style={{width:"100%",paddingBottom:80}}>
 
 <div style={{padding:20}}>
 
