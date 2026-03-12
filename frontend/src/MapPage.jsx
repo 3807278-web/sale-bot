@@ -42,7 +42,13 @@ export default function MapPage({ offers }) {
 
   return (
 
-    <div style={{height:"80vh", width:"100%"}}>
+    <div style={{
+      position:"fixed",
+      top:0,
+      left:0,
+      right:0,
+      bottom:60
+    }}>
 
       <MapContainer
         center={[50.4501,30.5234]}
