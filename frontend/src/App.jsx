@@ -325,7 +325,7 @@ return(
 
 <div style={{width:"100%",paddingBottom:80}}>
 
-<div style={{padding:20}}>
+<div style={{padding: page==="map" ? 0 : 20}}>
 
 {page==="admin" && !admin ? (
 
