@@ -323,7 +323,11 @@ fetch(API + "/offers")
 
 return(
 
-<div style={{width:"100%",paddingBottom:80}}>
+  <div style={{
+  width:"100%",
+  minHeight:"100vh",
+  paddingBottom:80
+  }}>
 
 <div style={{padding: page==="map" ? 0 : 20}}>
 
