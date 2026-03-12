@@ -363,12 +363,7 @@ else alert("Невірний пароль")
 
 {page==="offers" && <OffersPage offers={offers}/>}
 
-{page==="map" && (
-<>
-<h2>MAP TEST</h2>
-<MapPage offers={offers}/>
-</>
-)}
+{page==="map" && <MapPage offers={offers}/>}
 
 {page==="business" && <BusinessPage/>}
 
