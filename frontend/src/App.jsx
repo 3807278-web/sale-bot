@@ -1,212 +1,456 @@
 import { useState, useEffect } from "react";
-const ADMIN_PASSWORD = "Yura9777";
+import MapPage from "./MapPage";
 
 const API = "https://sale-bot-production-7ac2.up.railway.app";
+const ADMIN_PASSWORD = "Yura9777";
 
 const CITIES = {
-  "Київ": ["Позняки","Осокорки","Харківська","Оболонь","Подол","Троєщина","Святошин","Борщагівка","Виноградар","Лівобережна"],
-  "Бровари": ["Центр","Мікрорайон"],
-  "Бориспіль": ["Центр"],
-  "Вишневе": ["Центр"],
-  "Ірпінь": ["Центр","Буча"],
+  "Київ": ["Позняки","Осокорки","Харківська","Оболонь","Подол"],
+  "Бровари": ["Центр"],
+  "Бориспіль": ["Центр"]
 };
 
-const CATEGORIES = {
-  "Їжа та напої": ["Ресторани","Кафе","Піцерії","Суші","Бургери","Пекарні","Кав'ярні","Доставка їжі","Бари","Кальянні"],
-  "Краса та догляд": ["Салони краси","Барбершопи","Манікюр","Косметологія","Масаж","Лазерна епіляція","SPA салони"],
-  "Спорт": ["Фітнес клуби","Тренажерні зали","Йога студії","Танцювальні студії","Басейни"],
-  "Магазини": ["Одяг","Взуття","Аксесуари","Косметика","Електроніка","Парфуми","Квіти"],
-  "Діти": ["Дитячі магазини","Дитячі кімнати","Розвиваючі центри","Дитячі гуртки"],
-  "Авто": ["СТО","Шиномонтаж","Автомийки","Детейлінг","Запчастини"],
-  "Послуги": ["Ремонт техніки","Клінінг","Ремонт квартир","Хімчистки"],
-  "Освіта": ["Курси мов","IT курси","Репетитори","Автошколи"],
-  "Розваги": ["Кіно","Квести","Більярд","Боулинг","VR клуби","Антикафе"],
-  "Медицина": ["Аптеки","Стоматології","Медичні центри","Аналізи","Оптика"],
-  "Інше": ["Тату студії","Фотостудії","Готелі","Коворкінги","Доставка квітів"]
-};
+const CATEGORIES = [
+  "Кафе",
+  "Ресторан",
+  "Салон краси",
+  "Фітнес",
+  "Магазин"
+];
 
-function OffersPage() {
-  const [offers, setOffers] = useState([]);
-  const [city, setCity] = useState("");
-  const [district, setDistrict] = useState("");
-  const [category, setCategory] = useState("");
+function OffersPage({offers}){
 
-  useEffect(() => {
-    fetch(API + "/offers").then(r => r.json()).then(setOffers);
-  }, []);
+  const [city,setCity] = useState("");
+  const [district,setDistrict] = useState("");
+  const [selected,setSelected] = useState(null);
 
   const districts = city ? CITIES[city] : [];
-  const filtered = offers.filter(o =>
-    (district ? o.district === district : true) &&
-    (category ? o.category === category : true)
-  );
 
-  return (
-    <div>
-      <select onChange={e => { setCity(e.target.value); setDistrict(""); }} style={{width:"100%",padding:14,marginBottom:12,borderRadius:10,border:"2px solid #0088cc",fontSize:16,height:52,color:"#333",background:"white"}}>
-        <option value="">Обрати місто</option>
-        {Object.keys(CITIES).map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
-      {city && (
-        <select onChange={e => setDistrict(e.target.value)} style={{width:"100%",padding:14,marginBottom:12,borderRadius:10,border:"2px solid #0088cc",fontSize:16,height:52,color:"#333",background:"white"}}>
-          <option value="">Всі райони</option>
-          {districts.map(d => <option key={d} value={d}>{d}</option>)}
-        </select>
-      )}
-      <select onChange={e => setCategory(e.target.value)} style={{width:"100%",padding:14,marginBottom:12,borderRadius:10,border:"2px solid #0088cc",fontSize:16,height:52,color:"#333",background:"white"}}>
-        <option value="">Всі категорії</option>
-        {Object.entries(CATEGORIES).map(([group, cats]) => (
-          <optgroup key={group} label={group}>
-            {cats.map(c => <option key={c} value={c}>{c}</option>)}
-          </optgroup>
-        ))}
-      </select>
-      {filtered.length === 0 && <p style={{textAlign:"center",color:"#888"}}>Акцій не знайдено</p>}
-      {filtered.map(o => (
-        <div key={o.id} style={{border:"1px solid #eee",borderRadius:12,padding:16,marginBottom:12}}>
-          <h3 style={{margin:"0 0 8px"}}>{o.title}</h3>
-          <p style={{margin:"0 0 8px",color:"#555"}}>{o.description}</p>
-          <b style={{color:"green",fontSize:18}}>{o.discount}</b>
-          <p style={{margin:"8px 0 0",color:"#888",fontSize:13}}>{o.district} - {o.category}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
+  const filtered = offers.filter(o=>{
+    if(!district) return false;
+    return o.district === district;
+  });
 
-function BusinessPage() {
-  const [form, setForm] = useState({name:"",city:"",district:"",category:"",phone:"",title:"",description:"",discount:"",valid_until:""});
-  const [aiMode, setAiMode] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  return(
 
-  const update = (k, v) => setForm(f => ({...f, [k]: v}));
+<div>
 
-  const generateAI = async () => {
-    setAiLoading(true);
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:"Бізнес " + form.name + " має акцію " + form.title + " зі знижкою " + form.discount + ". Напиши короткий опис до 2 речень українською."}]})
-    });
-    const data = await res.json();
-    update("description", data.content[0].text);
-    setAiLoading(false);
-  };
+<h2>🔥 ТОП акції</h2>
 
-  const submit = async () => {
-    const bRes = await fetch(API + "/business/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tg_id:"tg_"+Date.now(),name:form.name,district:form.district,category:form.category,contact_name:"",contact_phone:form.phone})});
-    const biz = await bRes.json();
-    await fetch(API + "/offers/create", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({business_id:biz.id,title:form.title,description:form.description,discount:form.discount,valid_until:form.valid_until})});
-    setSuccess(true);
-  };
+<h2>🔎 Пошук</h2>
 
-  if (success) return (
-    <div style={{textAlign:"center",padding:40}}>
-      <div style={{fontSize:60}}>🎉</div>
-      <h2>Заявку відправлено!</h2>
-      <p style={{color:"#888"}}>Ваша акція на модерації.</p>
-    </div>
-  );
+<select value={city} onChange={(e)=>{
+setCity(e.target.value);
+setDistrict("");
+}} style={input}>
 
-  return (
-    <div>
-      <h3 style={{textAlign:"center"}}>Реєстрація бізнесу</h3>
-      <input placeholder="Назва бізнесу" value={form.name} onChange={e => update("name",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd",boxSizing:"border-box"}} />
-      <select onChange={e => {update("city",e.target.value);update("district","");}} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd"}}>
-        <option value="">Обрати місто</option>
-        {Object.keys(CITIES).map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
-      {form.city && (
-        <select onChange={e => update("district",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd"}}>
-          <option value="">Обрати район</option>
-          {CITIES[form.city].map(d => <option key={d} value={d}>{d}</option>)}
-        </select>
-      )}
-      <select onChange={e => update("category",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd"}}>
-        <option value="">Обрати категорію</option>
-        {Object.entries(CATEGORIES).map(([group, cats]) => (
-          <optgroup key={group} label={group}>
-            {cats.map(c => <option key={c} value={c}>{c}</option>)}
-          </optgroup>
-        ))}
-      </select>
-      <input placeholder="Телефон" value={form.phone} onChange={e => update("phone",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd",boxSizing:"border-box"}} />
-      <input placeholder="Назва акції" value={form.title} onChange={e => update("title",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd",boxSizing:"border-box"}} />
-      <input placeholder="Знижка (-20%)" value={form.discount} onChange={e => update("discount",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd",boxSizing:"border-box"}} />
-      <input type="date" value={form.valid_until} onChange={e => update("valid_until",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd",boxSizing:"border-box"}} />
-      <div style={{display:"flex",gap:8,marginBottom:10}}>
-        <button onClick={() => setAiMode(false)} style={{flex:1,padding:10,borderRadius:8,border:"none",background:!aiMode?"#0088cc":"#eee",color:!aiMode?"white":"black",cursor:"pointer"}}>Самостійно</button>
-        <button onClick={() => setAiMode(true)} style={{flex:1,padding:10,borderRadius:8,border:"none",background:aiMode?"#0088cc":"#eee",color:aiMode?"white":"black",cursor:"pointer"}}>Через AI</button>
-      </div>
-      {aiMode ? (
-        <div>
-          <button onClick={generateAI} disabled={aiLoading||!form.name||!form.title} style={{width:"100%",padding:12,borderRadius:8,border:"none",background:"#7c3aed",color:"white",cursor:"pointer",marginBottom:10}}>
-            {aiLoading ? "Генерую..." : "Згенерувати опис"}
-          </button>
-          {form.description && <div style={{padding:12,background:"#f3f0ff",borderRadius:8,marginBottom:10}}>{form.description}</div>}
-        </div>
-      ) : (
-        <textarea placeholder="Опишіть вашу акцію..." value={form.description} onChange={e => update("description",e.target.value)} style={{width:"100%",padding:10,marginBottom:10,borderRadius:8,border:"1px solid #ddd",boxSizing:"border-box",minHeight:80}} />
-      )}
-      <button onClick={submit} style={{width:"100%",padding:14,borderRadius:8,border:"none",background:"#0088cc",color:"white",fontSize:16,cursor:"pointer"}}>
-        Відправити на модерацію
-      </button>
-    </div>
-  );
-}
-function AdminPage() {
-  const [pending, setPending] = useState([]);
+<option value="">Місто</option>
 
-  useEffect(() => {
-    fetch(API + "/offers/pending")
-      .then(r => r.json())
-      .then(setPending);
-  }, []);
+{Object.keys(CITIES).map(c=>(
+<option key={c}>{c}</option>
+))}
 
-  return (
-    <div>
-      <h3 style={{textAlign:"center"}}>⚙️ Адмін панель</h3>
-      {pending.length === 0 && <p style={{textAlign:"center",color:"#888"}}>Немає акцій на модерації</p>}
-      {pending.map(o => (
-        <div key={o.id} style={{border:"1px solid #eee",borderRadius:12,padding:16,marginBottom:12}}>
-          <h3 style={{margin:"0 0 8px"}}>{o.title}</h3>
-          <p style={{color:"#555"}}>{o.description}</p>
-          <b style={{color:"green"}}>{o.discount}</b>
-          <div style={{display:"flex",gap:8,marginTop:12}}>
-            <button onClick={() => fetch(API+"/offers/approve/"+o.id,{method:"POST"}).then(()=>setPending(p=>p.filter(x=>x.id!==o.id)))} style={{flex:1,padding:10,borderRadius:8,border:"none",background:"green",color:"white",cursor:"pointer"}}>✅ Схвалити</button>
-            <button onClick={() => fetch(API+"/offers/reject/"+o.id,{method:"POST"}).then(()=>setPending(p=>p.filter(x=>x.id!==o.id)))} style={{flex:1,padding:10,borderRadius:8,border:"none",background:"red",color:"white",cursor:"pointer"}}>❌ Відхилити</button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-export default function App() {
-  const [page, setPage] = useState("offers");
-const [adminAuth, setAdminAuth] = useState(false);
-const [adminInput, setAdminInput] = useState("");
-  return (
-    <div style={{maxWidth:480,margin:"0 auto",fontFamily:"sans-serif",paddingBottom:70}}>
-      <div style={{padding:"16px 16px 0"}}>
-        {page === "admin" && !adminAuth ? (
-  <div style={{textAlign:"center",padding:40}}>
-    <h2>🔐 Адмін панель</h2>
-    <input type="password" placeholder="Введіть пароль" value={adminInput} onChange={e => setAdminInput(e.target.value)} style={{width:"100%",padding:14,borderRadius:10,border:"2px solid #0088cc",fontSize:16,boxSizing:"border-box",marginBottom:12}} />
-    <button onClick={() => { if(adminInput === ADMIN_PASSWORD) setAdminAuth(true); else alert("Невірний пароль!"); }} style={{width:"100%",padding:14,borderRadius:10,border:"none",background:"#0088cc",color:"white",fontSize:16,cursor:"pointer"}}>Увійти</button>
-  </div>
-) : page === "admin" && adminAuth ? (
-  <AdminPage />
-) : page === "offers" ? (
-  <OffersPage />
-) : (
-  <BusinessPage />
+</select>
+
+{city && (
+
+<select value={district} onChange={(e)=>setDistrict(e.target.value)} style={input}>
+
+<option value="">Район</option>
+
+{districts.map(d=>(
+<option key={d}>{d}</option>
+))}
+
+</select>
+
 )}
-      </div>
-      <div style={{position:"fixed",bottom:0,left:0,right:0,display:"flex",borderTop:"1px solid #eee",background:"white"}}>
-        <button onClick={() => setPage("offers")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="offers"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏷️ 🔍Знайти Акцію</button>
-<button onClick={() => setPage("business")} style={{flex:1,padding:16,border:"none",background:"none",color:page==="business"?"#0088cc":"#888",fontWeight:"bold",fontSize:16,cursor:"pointer"}}>🏢 +Дода Акцію✅</button>
-      <button onClick={() => setPage("admin")} style={{width:"48%",height:45,border:"none",borderRadius:10,background:page==="admin"?"#0088cc":"white",color:page==="admin"?"white":"#777",fontSize:14,fontWeight:"bold",cursor:"pointer"}}>⚙️ Адмін</button></div>
-    </div>
-  );
+
+<h2>📍 Результати</h2>
+
+{district && filtered.length===0 && <p>Акцій не знайдено</p>}
+
+{filtered.map(o=>(
+
+<div key={o.id} style={card}>
+
+<h3>{o.title}</h3>
+
+{o.description && <p>{o.description}</p>}
+
+<p style={{color:"green"}}>{o.discount}</p>
+
+<button onClick={()=>setSelected(o)}>Детальніше</button>
+
+</div>
+
+))}
+
+{selected && (
+
+<div style={overlay} onClick={()=>setSelected(null)}>
+
+<div style={modal} onClick={(e)=>e.stopPropagation()}>
+
+<h3>{selected.title}</h3>
+
+{selected.description && <p>{selected.description}</p>}
+
+<p style={{color:"green"}}>{selected.discount}</p>
+
+<button onClick={()=>setSelected(null)} style={closeBtn}>Закрити</button>
+
+</div>
+
+</div>
+
+)}
+
+</div>
+
+)
+
+}
+
+function BusinessPage(){
+
+const [step,setStep] = useState(1)
+
+const [business,setBusiness] = useState({
+name:"",
+district:"",
+category:"",
+contact_name:"",
+contact_phone:""
+})
+
+const [offer,setOffer] = useState({
+title:"",
+description:"",
+discount:"",
+valid_until:"",
+business_id:null
+})
+
+const registerBusiness = async()=>{
+
+const r = await fetch(API + "/business/register",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(business)
+})
+
+const data = await r.json()
+
+setOffer({...offer,business_id:data.id})
+
+setStep(2)
+
+}
+
+const createOffer = async()=>{
+
+await fetch(API + "/offers/create",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(offer)
+})
+
+setStep(3)
+
+}
+
+const aiGenerate = ()=>{
+
+setOffer({
+...offer,
+title:"-20% на популярну послугу",
+description:"Спеціальна акція для нових клієнтів",
+discount:"-20%"
+})
+
+}
+
+if(step===3){
+
+return(
+<div style={{textAlign:"center",padding:30}}>
+<h2>✅ Акцію відправлено</h2>
+<p>Після модерації вона з'явиться у сервісі</p>
+</div>
+)
+
+}
+
+return(
+
+<div>
+
+{step===1 && (
+
+<div>
+
+<h2>🏢 Реєстрація бізнесу</h2>
+
+<input placeholder="Назва бізнесу" style={input}
+onChange={(e)=>setBusiness({...business,name:e.target.value})}/>
+
+<select style={input}
+onChange={(e)=>setBusiness({...business,district:e.target.value})}>
+
+<option>Район</option>
+
+{CITIES["Київ"].map(d=>(
+<option key={d}>{d}</option>
+))}
+
+</select>
+
+<select style={input}
+onChange={(e)=>setBusiness({...business,category:e.target.value})}>
+
+<option>Категорія</option>
+
+{CATEGORIES.map(c=>(
+<option key={c}>{c}</option>
+))}
+
+</select>
+
+<input placeholder="Контактна особа" style={input}
+onChange={(e)=>setBusiness({...business,contact_name:e.target.value})}/>
+
+<input placeholder="Телефон" style={input}
+onChange={(e)=>setBusiness({...business,contact_phone:e.target.value})}/>
+
+<button style={mainBtn} onClick={registerBusiness}>
+Зареєструвати
+</button>
+
+</div>
+
+)}
+
+{step===2 && (
+
+<div>
+
+<h2>🎁 Створити акцію</h2>
+
+<button style={aiBtn} onClick={aiGenerate}>
+🤖 Створити через ШІ
+</button>
+
+<input placeholder="Назва акції" style={input}
+value={offer.title}
+onChange={(e)=>setOffer({...offer,title:e.target.value})}/>
+
+<textarea placeholder="Опис" style={input}
+value={offer.description}
+onChange={(e)=>setOffer({...offer,description:e.target.value})}/>
+
+<input placeholder="Знижка (-20%)" style={input}
+value={offer.discount}
+onChange={(e)=>setOffer({...offer,discount:e.target.value})}/>
+
+<input type="date" style={input}
+onChange={(e)=>setOffer({...offer,valid_until:e.target.value})}/>
+
+<button style={mainBtn} onClick={createOffer}>
+Відправити на модерацію
+</button>
+
+</div>
+
+)}
+
+</div>
+
+)
+
+}
+
+function AdminPage({offers,setOffers}){
+
+const approve = async(id)=>{
+
+await fetch(API + "/offers/approve/"+id,{
+method:"POST"
+})
+
+setOffers(offers.filter(o=>o.id!==id))
+
+}
+
+return(
+
+<div>
+
+<h2>⚙ Адмін панель</h2>
+
+{offers.map(o=>(
+
+<div key={o.id} style={card}>
+
+<h3>{o.title}</h3>
+
+<p>{o.discount}</p>
+
+<button onClick={()=>approve(o.id)}>Підтвердити</button>
+
+</div>
+
+))}
+
+</div>
+
+)
+
+}
+
+export default function App(){
+
+const [page,setPage] = useState("offers")
+const [offers,setOffers] = useState([])
+const [admin,setAdmin] = useState(false)
+const [pass,setPass] = useState("")
+
+useEffect(()=>{
+fetch(API + "/offers")
+.then(r=>r.json())
+.then(setOffers)
+},[])
+
+return(
+
+<div style={{width:"100%",margin:"0 auto",paddingBottom:80}}>
+
+<div style={{padding:20}}>
+
+{page==="admin" && !admin ? (
+
+<div>
+
+<h2>🔐 Вхід</h2>
+
+<input
+type="password"
+placeholder="Пароль"
+style={input}
+value={pass}
+onChange={(e)=>setPass(e.target.value)}
+/>
+
+<button style={mainBtn}
+onClick={()=>{
+
+if(pass===ADMIN_PASSWORD) setAdmin(true)
+else alert("Невірний пароль")
+
+}}>
+Увійти
+</button>
+
+</div>
+
+) : (
+
+<>
+
+{page==="offers" && <OffersPage offers={offers}/>}
+
+{page==="map" && (
+<>
+<h2>MAP TEST</h2>
+<MapPage offers={offers}/>
+</>
+)}
+
+{page==="business" && <BusinessPage/>}
+
+{page==="admin" && <AdminPage offers={offers} setOffers={setOffers}/>}
+
+</>
+
+)}
+
+</div>
+
+<div style={nav}>
+
+<button onClick={()=>setPage("offers")}>Акції</button>
+<button onClick={()=>setPage("map")}>Карта</button>
+<button onClick={()=>setPage("business")}>Бізнес</button>
+<button onClick={()=>setPage("admin")}>Адмін</button>
+
+</div>
+
+</div>
+
+)
+
+}
+
+const card={
+border:"1px solid #ddd",
+padding:15,
+borderRadius:10,
+marginBottom:10
+}
+
+const input={
+width:"100%",
+padding:10,
+marginBottom:10
+}
+
+const mainBtn={
+width:"100%",
+padding:12,
+background:"#0088cc",
+color:"#fff",
+border:"none"
+}
+
+const aiBtn={
+width:"100%",
+padding:10,
+marginBottom:10
+}
+
+const overlay={
+position:"fixed",
+top:0,
+left:0,
+right:0,
+bottom:0,
+background:"rgba(0,0,0,0.5)",
+display:"flex",
+alignItems:"center",
+justifyContent:"center"
+}
+
+const modal={
+background:"#fff",
+padding:20,
+borderRadius:10,
+width:300
+}
+
+const closeBtn={
+marginTop:10,
+width:"100%",
+padding:10
+}
+
+const nav={
+position:"fixed",
+bottom:0,
+left:0,
+right:0,
+display:"flex",
+borderTop:"1px solid #ddd",
+background:"#fff",
+justifyContent:"space-around",
+padding:10
 }
