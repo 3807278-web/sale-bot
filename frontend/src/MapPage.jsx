@@ -1,4 +1,5 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -18,6 +19,18 @@ const districts = {
   "Подол": [50.468, 30.516]
 };
 
+function FixMapSize(){
+  const map = useMap()
+
+  useEffect(()=>{
+    setTimeout(()=>{
+      map.invalidateSize()
+    },300)
+  },[])
+
+  return null
+}
+
 export default function MapPage({ offers }) {
 
   const markers = (offers || [])
@@ -36,6 +49,8 @@ export default function MapPage({ offers }) {
         zoom={11}
         style={{height:"100%", width:"100%"}}
       >
+
+        <FixMapSize/>
 
         <TileLayer
           attribution="© OpenStreetMap"
