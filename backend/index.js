@@ -43,6 +43,25 @@ app.get('/offers/:id', async (req, res) => {
   res.json(result.rows[0]);
 });
 
+app.post('/offers', async (req, res) => {
+  const { business_name, category, district, title, description, discount, phone } = req.body;
+  try {
+    const biz = await pool.query(
+      'INSERT INTO businesses (name, district, category, contact_phone) VALUES ($1,$2,$3,$4) RETURNING id',
+      [business_name || '', district || '', category || '', phone || '']
+    );
+    const business_id = biz.rows[0].id;
+    await pool.query(
+      'INSERT INTO offers (business_id, title, description, discount, is_approved) VALUES ($1,$2,$3,$4,false)',
+      [business_id, title || '', description || '', discount || null]
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.post('/business/register', async (req, res) => {
   const { tg_id, name, district, category, contact_name, contact_phone } = req.body;
   const result = await pool.query(
