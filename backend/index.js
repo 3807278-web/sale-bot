@@ -83,5 +83,35 @@ app.post('/offers/create', async (req, res) => {
 app.post('/offers/approve/:id', async (req, res) => {
   const result = await pool.query('UPDATE offers SET is_approved = true WHERE id = $1 RETURNING *', [req.params.id]);
   res.json(result.rows[0]);
-});const PORT = process.env.PORT || 3001;
+});
+
+app.patch('/offers/:id/approve', async (req, res) => {
+  try {
+    const result = await pool.query('UPDATE offers SET is_approved = true WHERE id = $1 RETURNING *', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Offer not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/admin/offers', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT o.id, o.title, o.description, o.discount, o.is_approved,
+             b.name AS business_name, b.district, b.category, b.contact_phone AS phone
+      FROM offers o
+      JOIN businesses b ON o.business_id = b.id
+      WHERE o.is_approved = false
+      ORDER BY o.id DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json([]);
+  }
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
