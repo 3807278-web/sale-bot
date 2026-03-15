@@ -42,6 +42,23 @@ app.get('/offers', async (req, res) => {
   res.json(result.rows);
 });
 
+app.get('/offers/map', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT o.id, o.title, o.description, o.discount,
+             b.name AS business_name, b.district, b.category, b.address, b.lat, b.lng, b.contact_phone AS phone
+      FROM offers o
+      JOIN businesses b ON o.business_id = b.id
+      WHERE o.is_approved = true AND b.lat IS NOT NULL AND b.lng IS NOT NULL
+      ORDER BY o.id DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json([]);
+  }
+});
+
 app.get('/offers/:id', async (req, res) => {
   const result = await pool.query('SELECT * FROM offers WHERE id = $1', [req.params.id]);
   res.json(result.rows[0]);
