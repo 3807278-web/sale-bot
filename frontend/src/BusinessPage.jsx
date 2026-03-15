@@ -49,6 +49,9 @@ export default function BusinessPage() {
   const [business_name, setBusiness_name] = useState("");
   const [category, setCategory] = useState("");
   const [district, setDistrict] = useState("");
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [discount, setDiscount] = useState("");
@@ -65,6 +68,9 @@ export default function BusinessPage() {
         business_name,
         category,
         district,
+        address,
+        lat: lat === "" ? null : Number(lat),
+        lng: lng === "" ? null : Number(lng),
         title,
         description,
         discount,
@@ -77,6 +83,9 @@ export default function BusinessPage() {
           setBusiness_name("");
           setCategory("");
           setDistrict("");
+          setAddress("");
+          setLat("");
+          setLng("");
           setTitle("");
           setDescription("");
           setDiscount("");
@@ -163,6 +172,44 @@ export default function BusinessPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Адреса
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              style={fieldStyle}
+              placeholder="Вулиця, будинок"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Широта (lat)
+            </label>
+            <input
+              type="number"
+              step="any"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              style={fieldStyle}
+              placeholder="50.4501"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Довгота (lng)
+            </label>
+            <input
+              type="number"
+              step="any"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              style={fieldStyle}
+              placeholder="30.5234"
+            />
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>

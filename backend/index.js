@@ -33,6 +33,10 @@ pool.query(`
   );
 `).then(() => console.log('Таблиці створено')).catch(e => console.log('DB error:', e.message));
 
+pool.query('ALTER TABLE businesses ADD COLUMN address TEXT').catch(() => {});
+pool.query('ALTER TABLE businesses ADD COLUMN lat DOUBLE PRECISION').catch(() => {});
+pool.query('ALTER TABLE businesses ADD COLUMN lng DOUBLE PRECISION').catch(() => {});
+
 app.get('/offers', async (req, res) => {
   const result = await pool.query('SELECT * FROM offers WHERE is_approved = true');
   res.json(result.rows);
@@ -44,11 +48,13 @@ app.get('/offers/:id', async (req, res) => {
 });
 
 app.post('/offers', async (req, res) => {
-  const { business_name, category, district, title, description, discount, phone } = req.body;
+  const { business_name, category, district, address, lat, lng, title, description, discount, phone } = req.body;
   try {
+    const latNum = lat != null && lat !== '' ? Number(lat) : null;
+    const lngNum = lng != null && lng !== '' ? Number(lng) : null;
     const biz = await pool.query(
-      'INSERT INTO businesses (name, district, category, contact_phone) VALUES ($1,$2,$3,$4) RETURNING id',
-      [business_name || '', district || '', category || '', phone || '']
+      'INSERT INTO businesses (name, district, category, contact_phone, address, lat, lng) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id',
+      [business_name || '', district || '', category || '', phone || '', address || null, latNum, lngNum]
     );
     const business_id = biz.rows[0].id;
     await pool.query(
