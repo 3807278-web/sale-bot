@@ -71,18 +71,22 @@ export default function BusinessPage() {
         phone,
       }),
     })
-      .then(() => {
-        setSubmitMessage("Акцію відправлено на модерацію");
-        setBusiness_name("");
-        setCategory("");
-        setDistrict("");
-        setTitle("");
-        setDescription("");
-        setDiscount("");
-        setPhone("");
+      .then((res) => {
+        if (res.ok) {
+          setSubmitMessage("Акцію відправлено на модерацію");
+          setBusiness_name("");
+          setCategory("");
+          setDistrict("");
+          setTitle("");
+          setDescription("");
+          setDiscount("");
+          setPhone("");
+        } else {
+          setSubmitMessage("Помилка відправки. Спробуйте ще раз.");
+        }
       })
       .catch(() => {
-        setSubmitMessage("Помилка відправки. Спробуйте пізніше.");
+        setSubmitMessage("Помилка відправки. Спробуйте ще раз.");
       });
   };
 
