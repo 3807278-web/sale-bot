@@ -1,73 +1,234 @@
-// frontend/src/BusinessPage.jsx
 import { useState } from "react";
-import { input, mainBtn, aiBtn } from "./styles"; // або вставити стилі вручну
 
 const API = "https://sale-bot-production-7ac2.up.railway.app";
+const CATEGORIES = [
+  "Кафе",
+  "Ресторани",
+  "Кава",
+  "Фастфуд",
+  "Піцерії",
+  "Барбершопи",
+  "Салони краси",
+  "Манікюр",
+  "Фітнес",
+  "Йога",
+  "Масаж",
+  "Спа",
+  "Аптеки",
+  "Медичні центри",
+  "Стоматологія",
+  "Автосервіс",
+  "Автомийка",
+  "Шиномонтаж",
+  "Освітні курси",
+  "Англійська",
+  "IT курси",
+  "Дитячі центри",
+  "Розваги",
+  "Кіно",
+  "Квести",
+  "Магазини",
+  "Одяг",
+  "Електроніка",
+  "Квіти",
+  "Подарунки",
+];
+const DISTRICTS = ["Позняки", "Осокорки", "Харківська"];
+
+const fieldStyle = {
+  width: "100%",
+  padding: "10px 12px",
+  marginBottom: 12,
+  borderRadius: 8,
+  border: "1px solid #e5e7eb",
+  boxSizing: "border-box",
+  fontSize: 16,
+};
 
 export default function BusinessPage() {
-  const [step, setStep] = useState(1);
-  const [business, setBusiness] = useState({ name:"", district:"", category:"", contact_name:"", contact_phone:"" });
-  const [offer, setOffer] = useState({ title:"", description:"", discount:"", valid_until:"", business_id:null });
+  const [business_name, setBusiness_name] = useState("");
+  const [category, setCategory] = useState("");
+  const [district, setDistrict] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [phone, setPhone] = useState("");
+  const [submitMessage, setSubmitMessage] = useState("");
 
-  const registerBusiness = async () => {
-    const r = await fetch(API + "/business/register", {
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(business)
-    });
-    const data = await r.json();
-    setOffer({...offer, business_id: data.id});
-    setStep(2);
-  }
-
-  const createOffer = async () => {
-    await fetch(API + "/offers/create", {
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(offer)
-    });
-    setStep(3);
-  }
-
-  const aiGenerate = () => {
-    setOffer({...offer, title:"-20% на популярну послугу", description:"Спеціальна акція для нових клієнтів", discount:"-20%"});
-  }
-
-  if(step===3){
-    return <div style={{textAlign:"center",padding:30}}><h2>✅ Акцію відправлено</h2><p>Після модерації вона з'явиться у сервісі</p></div>
-  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitMessage("");
+    fetch(`${API}/offers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        business_name,
+        category,
+        district,
+        title,
+        description,
+        discount,
+        phone,
+      }),
+    })
+      .then(() => {
+        setSubmitMessage("Акцію відправлено на модерацію");
+        setBusiness_name("");
+        setCategory("");
+        setDistrict("");
+        setTitle("");
+        setDescription("");
+        setDiscount("");
+        setPhone("");
+      })
+      .catch(() => {
+        setSubmitMessage("Помилка відправки. Спробуйте пізніше.");
+      });
+  };
 
   return (
-    <div>
-      {step===1 && (
-        <div>
-          <h2>🏢 Реєстрація бізнесу</h2>
-          <input placeholder="Назва бізнесу" style={input} onChange={e=>setBusiness({...business,name:e.target.value})}/>
-          <select style={input} onChange={e=>setBusiness({...business,district:e.target.value})}>
-            <option>Район</option>
-            <option>Позняки</option><option>Осокорки</option><option>Харківська</option><option>Оболонь</option><option>Подол</option>
-          </select>
-          <select style={input} onChange={e=>setBusiness({...business,category:e.target.value})}>
-            <option>Категорія</option>
-            <option>Кафе</option><option>Ресторан</option><option>Салон краси</option><option>Фітнес</option><option>Магазин</option>
-          </select>
-          <input placeholder="Контактна особа" style={input} onChange={e=>setBusiness({...business,contact_name:e.target.value})}/>
-          <input placeholder="Телефон" style={input} onChange={e=>setBusiness({...business,contact_phone:e.target.value})}/>
-          <button style={mainBtn} onClick={registerBusiness}>Зареєструвати</button>
-        </div>
-      )}
+    <div style={{ padding: "24px", maxWidth: "900px", margin: "0 auto" }}>
+      <h1 style={{ marginBottom: "16px" }}>Бізнес</h1>
 
-      {step===2 && (
-        <div>
-          <h2>🎁 Створити акцію</h2>
-          <button style={aiBtn} onClick={aiGenerate}>🤖 Створити через ШІ</button>
-          <input placeholder="Назва акції" style={input} value={offer.title} onChange={e=>setOffer({...offer,title:e.target.value})}/>
-          <textarea placeholder="Опис" style={input} value={offer.description} onChange={e=>setOffer({...offer,description:e.target.value})}/>
-          <input placeholder="Знижка (-20%)" style={input} value={offer.discount} onChange={e=>setOffer({...offer,discount:e.target.value})}/>
-          <input type="date" style={input} onChange={e=>setOffer({...offer,valid_until:e.target.value})}/>
-          <button style={mainBtn} onClick={createOffer}>Відправити на модерацію</button>
-        </div>
-      )}
+      <div
+        style={{
+          background: "#ffffff",
+          borderRadius: "16px",
+          padding: "20px",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+          marginBottom: "20px",
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>Профіль бізнесу</h2>
+        <p>Сторінка тимчасово спрощена, щоб проект стабільно працював.</p>
+        <p>Тут буде форма профілю бізнесу за новим ТЗ.</p>
+      </div>
+
+      <div
+        style={{
+          background: "#ffffff",
+          borderRadius: "16px",
+          padding: "20px",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>Додати акцію</h2>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Назва бізнесу
+            </label>
+            <input
+              type="text"
+              value={business_name}
+              onChange={(e) => setBusiness_name(e.target.value)}
+              style={fieldStyle}
+              placeholder="Назва закладу"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Категорія
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              style={fieldStyle}
+            >
+              <option value="">Оберіть категорію</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Район
+            </label>
+            <select
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              style={fieldStyle}
+            >
+              <option value="">Оберіть район</option>
+              {DISTRICTS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Назва акції
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              style={fieldStyle}
+              placeholder="Заголовок акції"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Опис
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={{ ...fieldStyle, minHeight: 80, resize: "vertical" }}
+              placeholder="Опис акції"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Знижка
+            </label>
+            <input
+              type="text"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              style={fieldStyle}
+              placeholder="Наприклад: -20%"
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Телефон
+            </label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              style={fieldStyle}
+              placeholder="+380..."
+            />
+          </div>
+          <button
+            type="submit"
+            style={{
+              padding: "10px 20px",
+              borderRadius: 8,
+              border: "none",
+              background: "#178AD8",
+              color: "#fff",
+              fontSize: 16,
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            Додати акцію
+          </button>
+          {submitMessage && (
+            <p style={{ marginTop: 16, color: "#166534", fontSize: 14 }}>
+              {submitMessage}
+            </p>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
