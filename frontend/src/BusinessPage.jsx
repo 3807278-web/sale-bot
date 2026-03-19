@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
-const API = "https://sale-bot-production-7ac2.up.railway.app";
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const DEBOUNCE_MS = 400;
+
+const API = "http://localhost:3001";
 const CATEGORIES = [
   "Кафе",
   "Ресторани",
@@ -33,7 +36,13 @@ const CATEGORIES = [
   "Квіти",
   "Подарунки",
 ];
-const DISTRICTS = ["Позняки", "Осокорки", "Харківська"];
+const CITIES = ["Київ", "Бровари", "Бориспіль", "Ірпінь"];
+const DISTRICTS_BY_CITY = {
+  Київ: ["Позняки", "Осокорки", "Харківська"],
+  Бровари: ["Центр", "Старе місто"],
+  Бориспіль: ["Центр", "Аеропорт"],
+  Ірпінь: ["Центр", "Новобудови"],
+};
 
 const fieldStyle = {
   width: "100%",
@@ -48,6 +57,7 @@ const fieldStyle = {
 export default function BusinessPage() {
   const [business_name, setBusiness_name] = useState("");
   const [category, setCategory] = useState("");
+  const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [address, setAddress] = useState("");
   const [lat, setLat] = useState("");
@@ -56,29 +66,77 @@ export default function BusinessPage() {
   const [description, setDescription] = useState("");
   const [discount, setDiscount] = useState("");
   const [phone, setPhone] = useState("");
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [discountPrice, setDiscountPrice] = useState("");
   const [submitMessage, setSubmitMessage] = useState("");
+  const [suggestions, setSuggestions] = useState(null);
+  const debounceRef = useRef(null);
+  const lastQueryRef = useRef("");
+
+  useEffect(() => {
+    // reset district when city changes
+    setDistrict("");
+  }, [city]);
+
+  useEffect(() => {
+    const q = address.trim();
+    if (!city || q.length < 2) {
+      setSuggestions(null);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const composedQuery = `${q}, ${city}`;
+      lastQueryRef.current = composedQuery;
+      fetch(
+        `${NOMINATIM_URL}?format=json&q=${encodeURIComponent(composedQuery)}&limit=5&countrycodes=ua`,
+        { headers: { "Accept-Language": "uk", "User-Agent": "SaleBot/1.0" } }
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          if (lastQueryRef.current === composedQuery) setSuggestions(Array.isArray(data) ? data : []);
+        })
+        .catch(() => {
+          if (lastQueryRef.current === composedQuery) setSuggestions([]);
+        });
+    }, DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [address]);
+
+  const pickSuggestion = (item) => {
+    setAddress(item.display_name);
+    setLat(String(item.lat));
+    setLng(String(item.lon));
+    setSuggestions(null);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitMessage("");
-    fetch(`${API}/offers`, {
+    const businessName = business_name;
+    const payload = {
+      title,
+      description,
+      discount,
+      city,
+      district,
+      category,
+      businessName,
+    };
+
+    console.log("POST /offers payload:", payload);
+
+    fetch("http://localhost:3001/offers", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        business_name,
-        category,
-        district,
-        address,
-        lat: lat === "" ? null : Number(lat),
-        lng: lng === "" ? null : Number(lng),
-        title,
-        description,
-        discount,
-        phone,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     })
-      .then((res) => {
-        if (res.ok) {
+      .then(async (response) => {
+        if (response.ok) {
           setSubmitMessage("Акцію відправлено на модерацію");
           setBusiness_name("");
           setCategory("");
@@ -90,11 +148,15 @@ export default function BusinessPage() {
           setDescription("");
           setDiscount("");
           setPhone("");
-        } else {
-          setSubmitMessage("Помилка відправки. Спробуйте ще раз.");
+          return;
         }
+
+        const errorText = await response.text().catch(() => "");
+        console.error("POST /offers failed:", response.status, errorText);
+        setSubmitMessage("Помилка відправки. Спробуйте ще раз.");
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("POST /offers network error:", err);
         setSubmitMessage("Помилка відправки. Спробуйте ще раз.");
       });
   };
@@ -158,22 +220,41 @@ export default function BusinessPage() {
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Місто
+            </label>
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              style={fieldStyle}
+            >
+              <option value="">Оберіть місто</option>
+              {CITIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
               Район
             </label>
             <select
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
               style={fieldStyle}
+              disabled={!city}
             >
-              <option value="">Оберіть район</option>
-              {DISTRICTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
+              <option value="">{city ? "Оберіть район" : "Спочатку оберіть місто"}</option>
+              {city &&
+                (DISTRICTS_BY_CITY[city] || []).map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
             </select>
           </div>
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 12, position: "relative" }}>
             <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
               Адреса
             </label>
@@ -181,9 +262,56 @@ export default function BusinessPage() {
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              onBlur={() => setTimeout(() => setSuggestions(null), 150)}
               style={fieldStyle}
               placeholder="Вулиця, будинок"
+              autoComplete="off"
             />
+            {address.trim().length >= 2 && suggestions !== null && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: "100%",
+                  marginTop: -4,
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 8,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  maxHeight: 220,
+                  overflowY: "auto",
+                  zIndex: 10,
+                }}
+              >
+                {suggestions.length === 0 ? (
+                  <div style={{ padding: "10px 12px", fontSize: 14, color: "#64748b" }}>
+                    Адресу не знайдено
+                  </div>
+                ) : (
+                  suggestions.map((item) => (
+                    <button
+                      key={item.place_id}
+                      type="button"
+                      onClick={() => pickSuggestion(item)}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "none",
+                        background: "none",
+                        fontSize: 14,
+                        textAlign: "left",
+                        cursor: "pointer",
+                        borderBottom: "1px solid #f1f5f9",
+                      }}
+                    >
+                      {item.display_name}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
@@ -244,6 +372,30 @@ export default function BusinessPage() {
               onChange={(e) => setDiscount(e.target.value)}
               style={fieldStyle}
               placeholder="Наприклад: -20%"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Початкова ціна
+            </label>
+            <input
+              type="number"
+              value={originalPrice}
+              onChange={(e) => setOriginalPrice(e.target.value)}
+              style={fieldStyle}
+              placeholder="Наприклад: 300"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Ціна зі знижкою
+            </label>
+            <input
+              type="number"
+              value={discountPrice}
+              onChange={(e) => setDiscountPrice(e.target.value)}
+              style={fieldStyle}
+              placeholder="Наприклад: 240"
             />
           </div>
           <div style={{ marginBottom: 16 }}>

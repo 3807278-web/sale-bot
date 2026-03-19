@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = "https://sale-bot-production-7ac2.up.railway.app";
+const API = "http://localhost:3001";
 
 export default function AdminPage() {
   const [offers, setOffers] = useState([]);
@@ -19,7 +19,7 @@ export default function AdminPage() {
 
   const handleApprove = (id) => {
     setMessage("");
-    fetch(`${API}/offers/${id}/approve`, { method: "PATCH" })
+    fetch(`${API}/admin/offers/${id}/approve`, { method: "PATCH" })
       .then((res) => {
         if (res.ok) {
           setMessage("Акцію підтверджено");
@@ -49,7 +49,7 @@ export default function AdminPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
-                <th style={{ padding: 8 }}>business_name</th>
+                <th style={{ padding: 8 }}>businessName</th>
                 <th style={{ padding: 8 }}>category</th>
                 <th style={{ padding: 8 }}>district</th>
                 <th style={{ padding: 8 }}>title</th>
@@ -63,7 +63,7 @@ export default function AdminPage() {
             <tbody>
               {offers.map((o) => (
                 <tr key={o.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                  <td style={{ padding: 8 }}>{o.business_name ?? "—"}</td>
+                  <td style={{ padding: 8 }}>{o.businessName ?? "—"}</td>
                   <td style={{ padding: 8 }}>{o.category ?? "—"}</td>
                   <td style={{ padding: 8 }}>{o.district ?? "—"}</td>
                   <td style={{ padding: 8 }}>{o.title ?? "—"}</td>
@@ -87,7 +87,7 @@ export default function AdminPage() {
                         fontSize: 13,
                       }}
                     >
-                      Approve
+                      Схвалити
                     </button>
                   </td>
                 </tr>
