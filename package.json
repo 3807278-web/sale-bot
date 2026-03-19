@@ -1,8 +1,12 @@
 {
-  "name": "sale-bot",
-  "version": "1.0.0",
-  "main": "backend/index.js",
-  "scripts": {
-  "start": "node backend/index.js"
-  }
-  }
+"name": "sale-bot",
+"version": "1.0.0",
+"main": "backend/index.js",
+"scripts": {
+"start": "node backend/index.js"
+},
+"dependencies": {
+"express": "^4.18.2",
+"cors": "^2.8.5"
+}
+}
