@@ -66,7 +66,7 @@ function FocusSelectedOffer({ shouldFocus, center, zoom, markerRef, offersCount 
 }
 
 export default function MapPage() {
-  const API = "http://localhost:3001";
+  const API = "https://sale-bot-production-7ac2.up.railway.app";
   const location = useLocation();
   const selectedOffer = location.state || null;
 

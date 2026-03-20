@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const DEBOUNCE_MS = 400;
 
-const API = "http://localhost:3001";
+const API = "https://sale-bot-production-7ac2.up.railway.app";
 const CATEGORIES = [
   "Кафе",
   "Ресторани",
@@ -128,7 +128,7 @@ export default function BusinessPage() {
 
     console.log("POST /offers payload:", payload);
 
-    fetch("http://localhost:3001/offers", {
+    fetch("https://sale-bot-production-7ac2.up.railway.app/offers", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

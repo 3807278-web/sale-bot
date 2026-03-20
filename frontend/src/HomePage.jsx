@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:3001";
+const API = "https://sale-bot-production-7ac2.up.railway.app";
 
 const CITIES = ["Київ", "Бровари", "Бориспіль", "Ірпінь"];
 
