@@ -57,7 +57,7 @@ app.get("/offers", (req, res) => {
   res.json(offers.filter((o) => o.is_approved === true));
 });
 
-// Admin moderation queue: pending / not approved
+// Admin moderation queue: pending only
 app.get("/admin/offers", (req, res) => {
   res.json(offers.filter((o) => o.is_approved !== true));
 });
@@ -104,7 +104,7 @@ app.post("/offers", (req, res) => {
   });
 });
 
-// Approve by id (canonical route)
+// Approve by id
 app.patch("/offers/:id/approve", (req, res) => {
   const updated = approveOfferById(req.params.id);
   if (!updated) {
@@ -113,13 +113,28 @@ app.patch("/offers/:id/approve", (req, res) => {
   return res.json(updated);
 });
 
-// Same approve action — kept for existing Admin UI (Railway)
+// Legacy path (Telegram / older clients)
 app.patch("/admin/offers/:id/approve", (req, res) => {
   const updated = approveOfferById(req.params.id);
   if (!updated) {
     return res.status(404).json({ error: "Offer not found" });
   }
   return res.json(updated);
+});
+
+// Reject / remove pending offer only
+app.delete("/offers/:id", (req, res) => {
+  const numericId = Number(req.params.id);
+  const idx = offers.findIndex((o) => Number(o.id) === numericId);
+  if (idx === -1) {
+    return res.status(404).json({ error: "Offer not found" });
+  }
+  const offer = offers[idx];
+  if (offer.is_approved === true) {
+    return res.status(404).json({ error: "Offer not found" });
+  }
+  offers.splice(idx, 1);
+  return res.json({ ok: true, message: "Акцію відхилено" });
 });
 
 const PORT = process.env.PORT || 3001;

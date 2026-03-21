@@ -1,16 +1,38 @@
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:3001";
+const API = "https://sale-bot-production-7ac2.up.railway.app";
 
 export default function AdminPage() {
   const [offers, setOffers] = useState([]);
-  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState("");
+  const [noticeIsError, setNoticeIsError] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadPending = () => {
+    setNotice("");
+    setNoticeIsError(false);
+    setLoading(true);
     fetch(`${API}/admin/offers`)
-      .then((r) => r.json())
-      .then((data) => setOffers(Array.isArray(data) ? data : []))
-      .catch(() => setOffers([]));
+      .then(async (r) => {
+        if (!r.ok) {
+          setLoadFailed(true);
+          setOffers([]);
+          setNotice("Не вдалося завантажити акції");
+          setNoticeIsError(true);
+          return;
+        }
+        setLoadFailed(false);
+        const data = await r.json();
+        setOffers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setLoadFailed(true);
+        setOffers([]);
+        setNotice("Не вдалося завантажити акції");
+        setNoticeIsError(true);
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -18,82 +40,135 @@ export default function AdminPage() {
   }, []);
 
   const handleApprove = (id) => {
-    setMessage("");
-    fetch(`${API}/admin/offers/${id}/approve`, { method: "PATCH" })
+    setNotice("");
+    setNoticeIsError(false);
+    fetch(`${API}/offers/${id}/approve`, { method: "PATCH" })
       .then((res) => {
         if (res.ok) {
-          setMessage("Акцію підтверджено");
-          loadPending();
+          setOffers((prev) => prev.filter((o) => o.id !== id));
+          setNotice("Акцію підтверджено");
+          setNoticeIsError(false);
         } else {
-          setMessage("Помилка підтвердження");
+          setNotice("Помилка підтвердження");
+          setNoticeIsError(true);
         }
       })
-      .catch(() => setMessage("Помилка підтвердження"));
+      .catch(() => {
+        setNotice("Помилка підтвердження");
+        setNoticeIsError(true);
+      });
+  };
+
+  const handleReject = (id) => {
+    setNotice("");
+    setNoticeIsError(false);
+    fetch(`${API}/offers/${id}`, { method: "DELETE" })
+      .then((res) => {
+        if (res.ok) {
+          setOffers((prev) => prev.filter((o) => o.id !== id));
+          setNotice("Акцію відхилено");
+          setNoticeIsError(false);
+        } else {
+          setNotice("Помилка відхилення");
+          setNoticeIsError(true);
+        }
+      })
+      .catch(() => {
+        setNotice("Помилка відхилення");
+        setNoticeIsError(true);
+      });
   };
 
   return (
     <div style={{ padding: "20px", maxWidth: 900, margin: "0 auto" }}>
       <h1 style={{ marginBottom: 8 }}>Адмін панель</h1>
       <p style={{ marginBottom: 16, color: "#64748b", fontSize: 14 }}>
-        Пропозиції на модерації (is_approved = false)
+        Пропозиції на модерації
       </p>
-      {message && (
-        <p style={{ marginBottom: 12, color: "#166534", fontSize: 14 }}>
-          {message}
+      {notice && (
+        <p
+          style={{
+            marginBottom: 12,
+            color: noticeIsError ? "#b91c1c" : "#166534",
+            fontSize: 14,
+          }}
+        >
+          {notice}
         </p>
       )}
-      {offers.length === 0 ? (
-        <p style={{ color: "#64748b" }}>Немає пропозицій на модерації</p>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-            <thead>
-              <tr style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}>
-                <th style={{ padding: 8 }}>businessName</th>
-                <th style={{ padding: 8 }}>category</th>
-                <th style={{ padding: 8 }}>district</th>
-                <th style={{ padding: 8 }}>title</th>
-                <th style={{ padding: 8 }}>description</th>
-                <th style={{ padding: 8 }}>discount</th>
-                <th style={{ padding: 8 }}>phone</th>
-                <th style={{ padding: 8 }}>is_approved</th>
-                <th style={{ padding: 8 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {offers.map((o) => (
-                <tr key={o.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                  <td style={{ padding: 8 }}>{o.businessName ?? "—"}</td>
-                  <td style={{ padding: 8 }}>{o.category ?? "—"}</td>
-                  <td style={{ padding: 8 }}>{o.district ?? "—"}</td>
-                  <td style={{ padding: 8 }}>{o.title ?? "—"}</td>
-                  <td style={{ padding: 8, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {o.description ?? "—"}
-                  </td>
-                  <td style={{ padding: 8 }}>{o.discount ?? "—"}</td>
-                  <td style={{ padding: 8 }}>{o.phone ?? "—"}</td>
-                  <td style={{ padding: 8 }}>{o.is_approved ? "так" : "ні"}</td>
-                  <td style={{ padding: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => handleApprove(o.id)}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: 8,
-                        border: "none",
-                        background: "#178AD8",
-                        color: "#fff",
-                        cursor: "pointer",
-                        fontSize: 13,
-                      }}
-                    >
-                      Схвалити
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {loading ? (
+        <p style={{ color: "#64748b" }}>Завантаження...</p>
+      ) : !loadFailed && offers.length === 0 ? (
+        <p style={{ color: "#64748b" }}>Нових акцій на модерації немає</p>
+      ) : loadFailed ? null : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {offers.map((o) => (
+            <div
+              key={o.id}
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 12,
+                padding: 14,
+                background: "#fff",
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 16 }}>
+                {o.title ?? "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
+                <strong>Заклад:</strong> {o.businessName ?? "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
+                <strong>Категорія:</strong> {o.category ?? "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
+                <strong>Місто:</strong> {o.city ?? "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
+                <strong>Район:</strong> {o.district ?? "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
+                <strong>Знижка:</strong> {o.discount ?? "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#4b5563", marginBottom: 12, lineHeight: 1.45 }}>
+                {o.description ?? "—"}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => handleApprove(o.id)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "#2563eb",
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  Підтвердити
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReject(o.id)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    background: "#f9fafb",
+                    color: "#111827",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  Відхилити
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
