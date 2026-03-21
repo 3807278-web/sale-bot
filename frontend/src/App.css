@@ -28,4 +28,14 @@
     select {
     font: inherit;
     }
-    
+    /* === HOT OFFERS SCROLL FIX === */
+.hot-offers-scroll {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .hot-offers-scroll > * {
+    min-width: 92%;
+    max-width: 92%;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    }

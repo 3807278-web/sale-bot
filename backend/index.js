@@ -5,7 +5,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage (fallback if DB is not ready)
+// In-memory storage only (no database)
 const offers = [
   {
     id: 1,
@@ -31,11 +31,40 @@ const offers = [
   },
 ];
 
+function nextOfferId() {
+  const maxId = offers.reduce((m, o) => {
+    const n = Number(o.id);
+    return Number.isFinite(n) ? Math.max(m, n) : m;
+  }, 0);
+  return maxId + 1;
+}
+
+function approveOfferById(id) {
+  const numericId = Number(id);
+  const offer = offers.find((o) => Number(o.id) === numericId);
+  if (!offer) return null;
+  offer.is_approved = true;
+  return offer;
+}
+
+// Health (Railway / uptime)
+app.get("/", (req, res) => {
+  res.json({ ok: true, message: "SaleBot backend is running" });
+});
+
+// Public list: approved only
 app.get("/offers", (req, res) => {
   res.json(offers.filter((o) => o.is_approved === true));
 });
 
+// Admin moderation queue: pending / not approved
+app.get("/admin/offers", (req, res) => {
+  res.json(offers.filter((o) => o.is_approved !== true));
+});
+
+// Business submits new offer (pending until approved)
 app.post("/offers", (req, res) => {
+  const body = req.body || {};
   const {
     title,
     description,
@@ -44,38 +73,53 @@ app.post("/offers", (req, res) => {
     district,
     category,
     businessName,
-  } = req.body || {};
+    phone,
+    address,
+    lat,
+    lng,
+  } = body;
 
   const offer = {
-    id: Date.now(),
-    title,
-    description,
-    discount,
-    city,
-    district,
-    category,
-    businessName,
+    id: nextOfferId(),
+    title: title != null ? String(title) : "",
+    description: description != null ? String(description) : "",
+    discount: discount != null ? String(discount) : "",
+    city: city != null ? String(city) : "",
+    district: district != null ? String(district) : "",
+    category: category != null ? String(category) : "",
+    businessName: businessName != null ? String(businessName) : "",
+    phone: phone != null ? String(phone) : "",
+    address: address != null ? String(address) : "",
+    lat: lat != null && lat !== "" ? Number(lat) : null,
+    lng: lng != null && lng !== "" ? Number(lng) : null,
     is_approved: false,
   };
 
   offers.push(offer);
 
   return res.status(201).json({
+    ok: true,
     message: "Акцію відправлено на модерацію",
     offer,
   });
 });
 
-app.get("/admin/offers", (req, res) => {
-  res.json(offers.filter((o) => o.is_approved === false));
+// Approve by id (canonical route)
+app.patch("/offers/:id/approve", (req, res) => {
+  const updated = approveOfferById(req.params.id);
+  if (!updated) {
+    return res.status(404).json({ error: "Offer not found" });
+  }
+  return res.json(updated);
 });
 
+// Same approve action — kept for existing Admin UI (Railway)
 app.patch("/admin/offers/:id/approve", (req, res) => {
-  const id = Number(req.params.id);
-  const offer = offers.find((o) => o.id === id);
-  if (!offer) return res.status(404).json({ error: "Offer not found" });
-  offer.is_approved = true;
-  return res.json(offer);
+  const updated = approveOfferById(req.params.id);
+  if (!updated) {
+    return res.status(404).json({ error: "Offer not found" });
+  }
+  return res.json(updated);
 });
 
 const PORT = process.env.PORT || 3001;

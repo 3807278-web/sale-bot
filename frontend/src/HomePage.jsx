@@ -399,13 +399,15 @@ marginBottom: 10,
 <div
 className="hot-offers-scroll"
 style={{
-display: "flex",
-overflowX: "auto",
-gap: 12,
-paddingBottom: 8,
-scrollbarWidth: "none",
-msOverflowStyle: "none",
-}}
+    display: "flex",
+    overflowX: "auto",
+    gap: 16,
+    paddingLeft: 16,
+    paddingRight: 24,
+    paddingBottom: 8,
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+  }}
 >
 {hotOffers.map((offer) => renderOfferCard(offer, true))}
 </div>
