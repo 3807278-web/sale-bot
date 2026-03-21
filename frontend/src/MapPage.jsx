@@ -65,6 +65,25 @@ function FocusSelectedOffer({ shouldFocus, center, zoom, markerRef, offersCount 
   return null;
 }
 
+function formatValidUntilShort(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  if (sameDay) {
+    return `До ${hh}:${mm}`;
+  }
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  return `До ${dd}.${mo} ${hh}:${mm}`;
+}
+
 export default function MapPage() {
   const API = "https://sale-bot-production-7ac2.up.railway.app";
   const location = useLocation();
@@ -91,7 +110,7 @@ export default function MapPage() {
       .then((data) => {
         if (!mounted) return;
         const list = Array.isArray(data) ? data : [];
-        setOffers(list.filter((o) => o && o.is_approved === true));
+        setOffers(list.filter((o) => o));
       })
       .catch(() => {
         if (!mounted) return;
@@ -160,6 +179,11 @@ export default function MapPage() {
                   )}
                   {o.description && (
                     <div style={{ color: "#475569", lineHeight: 1.4 }}>{o.description}</div>
+                  )}
+                  {o.valid_until && formatValidUntilShort(o.valid_until) && (
+                    <div style={{ color: "#64748b", fontSize: 12, marginTop: 6, fontWeight: 600 }}>
+                      {formatValidUntilShort(o.valid_until)}
+                    </div>
                   )}
 
                   <button

@@ -130,6 +130,18 @@ export default function AdminPage() {
               <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
                 <strong>Знижка:</strong> {o.discount ?? "—"}
               </div>
+              <div style={{ fontSize: 14, color: "#374151", marginBottom: 4 }}>
+                <strong>Діє до:</strong>{" "}
+                {o.valid_until
+                  ? new Date(o.valid_until).toLocaleString("uk-UA", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </div>
               <div style={{ fontSize: 14, color: "#4b5563", marginBottom: 12, lineHeight: 1.45 }}>
                 {o.description ?? "—"}
               </div>

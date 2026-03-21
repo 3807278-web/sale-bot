@@ -68,6 +68,8 @@ export default function BusinessPage() {
   const [phone, setPhone] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
+  const [validUntilDate, setValidUntilDate] = useState("");
+  const [validUntilTime, setValidUntilTime] = useState("23:59");
   const [submitMessage, setSubmitMessage] = useState("");
   const [suggestions, setSuggestions] = useState(null);
   const debounceRef = useRef(null);
@@ -115,6 +117,10 @@ export default function BusinessPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitMessage("");
+    if (!validUntilDate || !validUntilTime) {
+      setSubmitMessage("Вкажіть дату та час закінчення акції");
+      return;
+    }
     const businessName = business_name;
     const payload = {
       title,
@@ -124,6 +130,12 @@ export default function BusinessPage() {
       district,
       category,
       businessName,
+      phone,
+      address,
+      lat,
+      lng,
+      validUntilDate,
+      validUntilTime,
     };
 
     console.log("POST /offers payload:", payload);
@@ -148,12 +160,16 @@ export default function BusinessPage() {
           setDescription("");
           setDiscount("");
           setPhone("");
+          setValidUntilDate("");
+          setValidUntilTime("23:59");
           return;
         }
 
-        const errorText = await response.text().catch(() => "");
-        console.error("POST /offers failed:", response.status, errorText);
-        setSubmitMessage("Помилка відправки. Спробуйте ще раз.");
+        const errJson = await response.json().catch(() => ({}));
+        setSubmitMessage(
+          (errJson && errJson.error) || "Помилка відправки. Спробуйте ще раз."
+        );
+        console.error("POST /offers failed:", response.status);
       })
       .catch((err) => {
         console.error("POST /offers network error:", err);
@@ -408,6 +424,30 @@ export default function BusinessPage() {
               onChange={(e) => setPhone(e.target.value)}
               style={fieldStyle}
               placeholder="+380..."
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Акція діє до (дата) <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              type="date"
+              value={validUntilDate}
+              onChange={(e) => setValidUntilDate(e.target.value)}
+              style={fieldStyle}
+              required
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+              Акція діє до (час) <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              type="time"
+              value={validUntilTime}
+              onChange={(e) => setValidUntilTime(e.target.value)}
+              style={fieldStyle}
+              required
             />
           </div>
           <button

@@ -44,6 +44,25 @@ const CATEGORIES = [
 "Послуги",
 ];
 
+function formatValidUntilShort(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  if (sameDay) {
+    return `До ${hh}:${mm}`;
+  }
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  return `До ${dd}.${mo} ${hh}:${mm}`;
+}
+
 export default function HomePage() {
 const navigate = useNavigate();
 
@@ -107,6 +126,7 @@ const hotOffers = filtered.slice(0, 6);
 function openDetails(offer) {
 navigate("/map", {
 state: {
+id: offer.id,
 offerId: offer.id,
 title: offer.title,
 description: offer.description,
@@ -115,6 +135,7 @@ city: offer.city,
 district: offer.district,
 lat: offer.lat,
 lng: offer.lng,
+valid_until: offer.valid_until,
 },
 });
 }
@@ -191,7 +212,9 @@ fontSize: 12,
 fontWeight: 700,
 }}
 >
-{offer.discount || "-"}
+{typeof offer.discount === "number"
+  ? `-${offer.discount}%`
+  : offer.discount ?? "-"}
 </div>
 </div>
 
@@ -249,6 +272,19 @@ lineHeight: 1.35,
 >
 {offer.description}
 </div>
+{offer.valid_until &&
+formatValidUntilShort(offer.valid_until) && (
+<div
+style={{
+fontSize: 13,
+color: "#64748b",
+marginTop: 6,
+fontWeight: 600,
+}}
+>
+{formatValidUntilShort(offer.valid_until)}
+</div>
+)}
 </div>
 </div>
 

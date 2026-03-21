@@ -17,6 +17,7 @@ const offers = [
     category: "Їжа",
     businessName: "Кафе",
     is_approved: true,
+    valid_until: "2099-12-31T23:59:00.000Z",
   },
   {
     id: 2,
@@ -28,6 +29,7 @@ const offers = [
     category: "Краса",
     businessName: "Барбершоп",
     is_approved: true,
+    valid_until: "2099-12-31T23:59:00.000Z",
   },
 ];
 
@@ -37,6 +39,25 @@ function nextOfferId() {
     return Number.isFinite(n) ? Math.max(m, n) : m;
   }, 0);
   return maxId + 1;
+}
+
+/** Combine YYYY-MM-DD + HH:mm (or HH:mm:ss) into ISO string stored in valid_until */
+function parseValidUntil(validUntilDate, validUntilTime) {
+  if (validUntilDate == null || validUntilTime == null) return null;
+  const d = String(validUntilDate).trim();
+  const t = String(validUntilTime).trim();
+  if (!d || !t) return null;
+  const timePart = t.length === 5 ? `${t}:00` : t;
+  const candidate = `${d}T${timePart}`;
+  const parsed = new Date(candidate);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
+function isPubliclyActive(offer) {
+  if (!offer || offer.is_approved !== true) return false;
+  if (!offer.valid_until) return false;
+  return new Date(offer.valid_until) > new Date();
 }
 
 function approveOfferById(id) {
@@ -52,9 +73,9 @@ app.get("/", (req, res) => {
   res.json({ ok: true, message: "SaleBot backend is running" });
 });
 
-// Public list: approved only
+// Public list: approved + not expired
 app.get("/offers", (req, res) => {
-  res.json(offers.filter((o) => o.is_approved === true));
+  res.json(offers.filter(isPubliclyActive));
 });
 
 // Admin moderation queue: pending only
@@ -77,7 +98,16 @@ app.post("/offers", (req, res) => {
     address,
     lat,
     lng,
+    validUntilDate,
+    validUntilTime,
   } = body;
+
+  const valid_until = parseValidUntil(validUntilDate, validUntilTime);
+  if (!valid_until) {
+    return res.status(400).json({
+      error: "validUntilDate та validUntilTime обов'язкові та мають бути коректними",
+    });
+  }
 
   const offer = {
     id: nextOfferId(),
@@ -92,6 +122,7 @@ app.post("/offers", (req, res) => {
     address: address != null ? String(address) : "",
     lat: lat != null && lat !== "" ? Number(lat) : null,
     lng: lng != null && lng !== "" ? Number(lng) : null,
+    valid_until,
     is_approved: false,
   };
 
